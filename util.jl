@@ -5,8 +5,8 @@ using Arpack
 using ProgressMeter
 using Random
 using Distributions
-import Seaborn
-import Pandas
+# import Seaborn
+# import Pandas
 
 function pca(A, k)
     @assert k <= minimum(size(A))
