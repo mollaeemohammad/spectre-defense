@@ -1,4 +1,5 @@
 include("dkk17.jl")
+include("bench_util.jl")
 
 function rcov_quantum_filter(reps, eps, k, α=4, τ=0.1; limit1=2, limit2=1.5)
     d, n = size(reps)
@@ -7,8 +8,8 @@ function rcov_quantum_filter(reps, eps, k, α=4, τ=0.1; limit1=2, limit2=1.5)
         reps_estimated_white = reps_pca
         Σ′ = ones(1, 1)
     else
-        t = @elapsed selected = cov_estimation_iterate(reps_pca, eps/n, τ, nothing, limit=round(Int, limit1*eps))
-        println("estimator time: $t seconds")
+        selected, t = timed_median_call(cov_estimation_iterate, reps_pca, eps/n, τ, nothing; n_reps=5, limit=round(Int, limit1*eps))
+        println("estimator time (median of 5): $t seconds")
         reps_pca_selected = reps_pca[:, selected]
         Σ = cov(reps_pca_selected', corrected=false)
         reps_estimated_white = Σ^(-1/2)*reps_pca
@@ -23,10 +24,10 @@ function rcov_quantum_filter(reps, eps, k, α=4, τ=0.1; limit1=2, limit2=1.5)
     return .! estimated_poison_ind
 end
 
-function rcov_auto_quantum_filter(reps, eps, α=4, τ=0.1; limit1=2, limit2=1.5)
-    reps_pca, U = pca(reps, 100)
+function rcov_auto_quantum_filter(reps, eps, α=4, τ=0.1; limit1=2, limit2=1.5, k_max=100)
+    reps_pca, U = pca(reps, k_max)
     best_opnorm, best_selected, best_k = -Inf, nothing, nothing
-    for k in round.(Int, range(1, sqrt(100), length=10) .^ 2)
+    for k in round.(Int, range(1, sqrt(k_max), length=round(Int, sqrt(k_max))) .^ 2)
         selected = rcov_quantum_filter(reps, eps, k, α, τ; limit1=limit1, limit2=limit2)
         Σ = cov(reps_pca[:, selected]')
         Σ′ = cov((Σ^(-1/2)*reps_pca)')

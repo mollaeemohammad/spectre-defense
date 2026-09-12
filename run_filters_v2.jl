@@ -6,6 +6,15 @@ include("quantum_filters_v2.jl")
 
 log_file = open("run_filters.log", "a")
 
+
+println("Julia: ", VERSION)
+using LinearAlgebra: BLAS
+println("BLAS threads: ", BLAS.get_num_threads())
+println("CPU: ", Sys.cpu_info()[1].model, " x", length(Sys.cpu_info()))
+
+_dummy = randn(5, 20)
+robust_mahalanobis_iterate(_dummy, 0.1, 0.1, nothing; limit=2)
+
 for name in ARGS
     target_label = parse(Int, split(name, "-")[3][end:end])
     reps = npzread("output/$(name)/label_$(target_label)_reps.npy")'
